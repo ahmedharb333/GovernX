@@ -1,5 +1,9 @@
 # GovernX Remotion Renderer
 
+![Remotion](https://img.shields.io/badge/Remotion-4.0.186-0088CC?logo=remotion&logoColor=white)
+![Node](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-%5E4.18.2-000000?logo=express&logoColor=white)
+
 Programmatic video renderer for GovernX — builds branded MP4 scenes from structured data.
 
 ## Compositions

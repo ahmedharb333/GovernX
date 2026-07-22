@@ -201,9 +201,13 @@ Rules that follow from it:
    so Remotion Studio preview of AssembledFilm shows empty scenes. Cosmetic.
 3. **Audio quality** — voice/A-V sync is now frame-accurate by construction, but ElevenLabs
    voice quality on the cloned voice still wants a human listen per film.
-4. **Apps Script is copy-paste, not deployed** — the `.gs`/`.txt` files in
-   `Desktop/New folder/` are the working copies; the user must paste changed files into the
-   live bound script for them to take effect (no `clasp`/git sync in this project).
+4. **Apps Script now deploys via clasp + git** (set up 2026-07-22). The live bound script
+   (id `1m0GAjFf8E3…ryIuo-Cv`, owner media@thegovernx.com) mirrors **`GovernX/apps-script/`** — a
+   clasp project, git-versioned. Deploy = **`clasp push`** from that folder; pull browser edits with
+   `clasp pull`. Filenames there are the live names (`Pipeline.js`, `Menu.js`, `dashboard.js`, …).
+   The old `Desktop/New folder/` `.txt`/`.gs` copies are now **legacy backups** — edit the clasp
+   folder going forward. (Remotion is git-versioned separately at `governx-remotion/` →
+   github.com/ahmedharb333/GovernX.)
 
 ### Verifying a render (no API needed)
 Extract frames with the bundled ffmpeg (`node_modules/@remotion/compositor-win32-x64-msvc/`,
@@ -214,8 +218,9 @@ how the Wells Fargo contamination, the 48s freeze, and the off-frame timeline we
 ### ▶ Next-video workflow (per-video checklist)
 
 **Two sync steps first — nothing takes effect without them:**
-1. **Re-paste changed Apps Script files** into the live bound editor (no `clasp`/git — copy-paste
-   from `Desktop/New folder/`). Currently ahead of the live script:
+1. **Deploy Apps Script changes with `clasp push`** from `GovernX/apps-script/` (then `git commit`
+   for history) — no more copy-paste. (Legacy: the `Desktop/New folder/` copies below are the old
+   pre-clasp working set.) Files historically edited via those copies:
    `pipeline.txt` (TTS `speakNumbers_` + Stage 10), `Stage_8E_Thumbnail_Remotion.gs`
    (thumbnail styles + folder + byte-gate), `Stage_9C_Remotion_Assembly.gs` (`previewOneScene`),
    `stage_11_youtube_upload.txt` (references de-walled — group by URL, ≤6 sources × ≤3 quotes),

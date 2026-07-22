@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> ★ **North Star:** the long-term vision — evolve GovernX from a YouTube channel into an AI-first
+> **Governance Intelligence company** (a trusted "truth platform," Bloomberg/Gartner-style) — is
+> captured verbatim in **`GOVERNX_NORTH_STAR.md`** (with a strategic read). It's vision only;
+> do **not** start implementing its 20 pillars without an explicit go-ahead. The current
+> pipeline + intelligence layer is Phase 0 of it.
+
 ## Commands
 
 ```bash

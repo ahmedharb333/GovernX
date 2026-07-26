@@ -200,12 +200,10 @@ export const CaseKPIDashboard = ({
 
 /* ── PROGRESS GAUGES ───────────────────────────────────────────────────────── */
 export const CaseGauges = ({
-  title = "CONTROL COVERAGE — BY DOMAIN",
-  gauges = [
-    { label: "Financial Reporting", value: 96 },
-    { label: "Data & IT", value: 88 },
-    { label: "Incentive Design", value: 4, highlight: true }
-  ]
+  title = "",
+  gauges = [],
+  sourceLabel = "",
+  sourceYear = ""
 }) => {
   const f = useCurrentFrame();
   const R = 150, sw = 26, cx0 = 460, gap = 500, cy = 560;
@@ -237,7 +235,12 @@ export const CaseGauges = ({
           );
         })}
       </svg>
-      <SourceFooter publisher="GovernX analysis" year="" docType="illustrative coverage" delay={58} bottom={SPACE.lg} />
+      {/* Source comes from the DATA, never hardcoded. This once read
+          `publisher="GovernX analysis" docType="illustrative coverage"`, which
+          stamped that label onto a REAL verified figure (Nokia's 20% UK brand
+          preference) — mislabelling sourced evidence as GovernX's own illustration
+          (THE ONE INVARIANT). Blank when the data carries no source. */}
+      {sourceLabel && <SourceFooter publisher={sourceLabel} year={sourceYear} docType="" delay={58} bottom={SPACE.lg} />}
     </Frame>
   );
 };

@@ -191,7 +191,8 @@ function kpi(kv) {
 }
 function gauges(kv) {
   const g = splitItems(kv.gauges).map(it => { const [l, v, u, , h] = it.split(":"); return prune({ label: (l || "").trim(), value: num(v), unit: (u || "%").trim(), highlight: bool(h) }); }).filter(x => x.value !== undefined);
-  return { component: "CaseGauges", props: prune({ title: kv.title, gauges: g }) };
+  return { component: "CaseGauges", props: prune({ title: kv.title, gauges: g,
+    sourceLabel: kv.source_publisher || kv.source, sourceYear: kv.source_year }) };
 }
 function riskMatrix(kv) {
   const risks = splitItems(kv.risks).map(it => { const [l, a, b, h] = it.split(":"); return prune({ label: (l || "").trim(), likelihood: num(a), impact: num(b), highlight: bool(h) }); }).filter(r => r.likelihood !== undefined);

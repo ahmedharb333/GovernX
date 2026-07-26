@@ -10,7 +10,7 @@
 
 const express  = require("express");
 const { bundle } = require("@remotion/bundler");
-const { renderMedia, renderStill, selectComposition } = require("@remotion/renderer");
+const { renderMedia, renderStill, selectComposition, ensureBrowser } = require("@remotion/renderer");
 const path   = require("path");
 const fs     = require("fs");
 
@@ -395,10 +395,20 @@ app.listen(PORT, async () => {
   console.log(`\n  Output folder   : ${OUTPUT_DIR}`);
   console.log("\n  Waiting for render requests from Apps Script...\n");
 
-  // Pre-warm the bundle on startup
+  // Pre-warm the bundle AND the headless browser on startup, so the first render
+  // request doesn't pay the cold-start cost and time out. Remotion's browser-setup
+  // default is 30s; a cold Chromium launch on Windows (first launch, antivirus,
+  // fonts) can exceed that and fail "setting up the headless browser" — killing
+  // Stage 9C / preview / thumbnail. Launch it once here with a generous window.
   try {
     await getBundle();
   } catch (e) {
     console.error("  Bundle error:", e.message);
+  }
+  try {
+    await ensureBrowser({ timeoutInMilliseconds: 120000 });
+    console.log("  Headless browser ready ✅\n");
+  } catch (e) {
+    console.error("  Browser warm-up error:", e.message);
   }
 });

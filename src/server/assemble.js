@@ -15,8 +15,14 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
-const { renderMedia, selectComposition } = require("@remotion/renderer");
+const { renderMedia, selectComposition, ensureBrowser } = require("@remotion/renderer");
 const { adaptScene } = require("./adapt");
+
+// Remotion's default browser-setup timeout is 30s. On Windows, a cold first render
+// after a server restart (fresh Chromium launch + antivirus scan + font load) can
+// exceed that, and the whole assemble fails with "Timed out after 30000 while
+// setting up the headless browser". Give the browser a generous window and reuse it.
+const BROWSER_TIMEOUT_MS = 120000;   // 2 min — covers a cold Chromium launch
 
 const PUBLIC_DIR = path.join(__dirname, "..", "..", "public");
 const AUDIO_DIR = path.join(PUBLIC_DIR, "audio");
@@ -189,9 +195,15 @@ async function renderAssembled({ contentId, builtScenes, showCaptions = true, se
     onLog(`copied ${builtScenes.filter(s => s.audioSrc).length} clips into bundle public/audio`);
   }
 
+  // Pre-warm Chromium once (downloads/launches the headless shell) with a generous
+  // timeout, so the first selectComposition below doesn't hit the 30s default and
+  // fail the whole assemble. Cheap no-op if the browser is already up.
+  onLog("ensuring headless browser…");
+  await ensureBrowser({ timeoutInMilliseconds: BROWSER_TIMEOUT_MS });
+
   // publicDir points staticFile at the LIVE public/ folder (where we just wrote
   // the audio), not the bundle's compile-time snapshot.
-  const composition = await selectComposition({ serveUrl, id: "AssembledFilm", inputProps, publicDir: PUBLIC_DIR });
+  const composition = await selectComposition({ serveUrl, id: "AssembledFilm", inputProps, publicDir: PUBLIC_DIR, timeoutInMilliseconds: BROWSER_TIMEOUT_MS });
   const outputPath = path.join(OUTPUT_DIR, `${contentId}_assembled.mp4`);
   onLog(`rendering ${composition.durationInFrames} frames (${(composition.durationInFrames / FPS).toFixed(1)}s)…`);
 
@@ -200,7 +212,7 @@ async function renderAssembled({ contentId, builtScenes, showCaptions = true, se
     // PNG frames (lossless) + crf 12 to match the single-scene renders. JPEG frames
     // + crf 18 softened text edges — fatal on a text/data channel. Slightly slower
     // render + larger file, but the whole point of GovernX is crisp on-screen figures.
-    imageFormat: "png", crf: 12, concurrency: 4,
+    imageFormat: "png", crf: 12, concurrency: 4, timeoutInMilliseconds: BROWSER_TIMEOUT_MS,
     onProgress: ({ progress }) => { if (Math.round(progress * 100) % 10 === 0) onLog(`  ${Math.round(progress * 100)}%`); }
   });
 

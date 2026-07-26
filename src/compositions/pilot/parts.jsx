@@ -289,6 +289,17 @@ export const Vignette = () => (
 // ── Animated count-up number (quart ease, no bounce) ─────────────────────────
 export const useCountUp = (to, from = 0, start = 8, dur = 46, decimals = 0) => {
   const f = useCurrentFrame();
+  // A bare 4-digit calendar year (1900–2099, whole number, counting up from 0) is a
+  // DATE a director wrongly dropped into a magnitude slot. It must never be thousands-
+  // grouped ("2,007") or animated as a 0→2007 tally — render the plain year. This is
+  // the single chokepoint for every count-up number, so the guard covers all
+  // components at once. (See DIRECTOR_SPEC: a year is context, never the hero metric;
+  // this is the render-side defense for when the director slips anyway. A true metric
+  // that happens to land in this range — "2,000 layoffs" — is rare and still reads
+  // fine as "2000", so the trade-off favours killing the broken-tally look.)
+  if (decimals === 0 && from === 0 && Number.isInteger(to) && to >= 1900 && to <= 2099) {
+    return String(to);
+  }
   const v = interpolate(f, [start, start + dur], [from, to], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: EASE.out });
   return decimals > 0 ? v.toFixed(decimals) : Math.round(v).toLocaleString();
 };

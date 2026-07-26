@@ -86,9 +86,10 @@ export const BigNumberPoster = ({
         {kicker}
       </div>
 
-      {/* Red arrow: the signal element. It must land in clear navy just past the
-          number's right edge (~x1430) — never inside a glyph. */}
-      <RedArrow x1={1840} y1={330} x2={1452} y2={478} delay={26} dur={22} width={13} />
+      {/* Red arrow removed: it was hardcoded to a fixed diagonal (1840,330 → 1452,478),
+          so for a short value the number sits far left and the arrow points into empty
+          navy — and it always angles DOWN, implying "decline" even when the figure rose.
+          The huge red/white number + tag already carry the emphasis; the arrow was noise. */}
 
       {/* THE NUMBER */}
       <div style={{

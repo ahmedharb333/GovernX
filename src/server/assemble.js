@@ -197,7 +197,10 @@ async function renderAssembled({ contentId, builtScenes, showCaptions = true, se
 
   await renderMedia({
     composition, serveUrl, codec: "h264", outputLocation: outputPath, inputProps, publicDir: PUBLIC_DIR,
-    imageFormat: "jpeg", jpegQuality: 90, crf: 18, concurrency: 4,
+    // PNG frames (lossless) + crf 12 to match the single-scene renders. JPEG frames
+    // + crf 18 softened text edges — fatal on a text/data channel. Slightly slower
+    // render + larger file, but the whole point of GovernX is crisp on-screen figures.
+    imageFormat: "png", crf: 12, concurrency: 4,
     onProgress: ({ progress }) => { if (Math.round(progress * 100) % 10 === 0) onLog(`  ${Math.round(progress * 100)}%`); }
   });
 

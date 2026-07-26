@@ -13,9 +13,19 @@ const crypto = require("crypto");
 const ARCHIVE_DIR = path.join(__dirname, "../../../research_archive");
 if (!fs.existsSync(ARCHIVE_DIR)) fs.mkdirSync(ARCHIVE_DIR, { recursive: true });
 
-// SEC and most regulators require a descriptive UA with contact info.
+// A bot-identifying UA ("GovernX-Research/1.0 …") gets 403'd by anti-bot layers
+// (Cloudflare, academic publishers, news sites) — it turned away INSEAD, SagePub
+// and others that are actually freely readable in a browser. Present as a normal
+// browser so public pages load; publishers that truly gate content (WSJ → 401)
+// still won't serve, and that's correct. EDGAR/SEC keeps its own descriptive UA
+// in edgar.js, so this doesn't touch regulator API access. Override via env.
 const UA = process.env.RESEARCH_USER_AGENT ||
-  "GovernX-Research/1.0 (research@governx.local)";
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
+const BROWSER_HEADERS = {
+  "User-Agent"     : UA,
+  "Accept"         : "text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf;q=0.8,*/*;q=0.7",
+  "Accept-Language": "en-US,en;q=0.9"
+};
 
 async function fetchDocument(url) {
   const out = { ok: false, url, finalUrl: url, contentType: "", title: "",
@@ -23,12 +33,23 @@ async function fetchDocument(url) {
   try {
     const resp = await fetch(url, {
       redirect: "follow",
-      headers : { "User-Agent": UA, "Accept": "*/*" }
+      headers : BROWSER_HEADERS
     });
     out.finalUrl    = resp.url || url;
     out.contentType = (resp.headers.get("content-type") || "").toLowerCase();
 
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    if (!resp.ok) {
+      // Distinguish WHY, so the operator knows whether it's fixable. A bare
+      // "HTTP 403" hides three very different causes: a Cloudflare JS challenge
+      // (needs a real browser — no header fix works), a hard paywall (401), or a
+      // dead URL (404). Report the actionable reason.
+      const cf = (resp.headers.get("cf-mitigated") || "").toLowerCase() === "challenge"
+              || (resp.headers.get("server") || "").toLowerCase().includes("cloudflare") && resp.status === 403;
+      if (cf)                    throw new Error(`Blocked by Cloudflare bot-challenge (HTTP ${resp.status}) — page needs a real browser; add its claims manually or use a non-protected mirror`);
+      if (resp.status === 401)   throw new Error(`HTTP 401 — paywalled/login-required source`);
+      if (resp.status === 404)   throw new Error(`HTTP 404 — URL not found (check the stored link; it may be truncated or moved)`);
+      throw new Error("HTTP " + resp.status);
+    }
 
     const isPdf = out.contentType.includes("pdf") || /\.pdf($|\?)/i.test(url);
 

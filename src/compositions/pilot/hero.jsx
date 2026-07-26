@@ -34,6 +34,12 @@ export const OpeningHook = ({
   const f = useCurrentFrame();
   // slow controlled zoom on the number for the tail — motion without a new cut
   const zoom = interpolate(f, [40, 380], [1, 1.035], { extrapolateRight: "clamp", easing: Easing.inOut(Easing.quad) });
+  // A source line + "VERIFIED / Primary Source" badges may ONLY show when the
+  // data carried a real, external publisher. When the adapter has no publisher
+  // it self-cites ("GovernX") — which reads on screen as "SOURCE: GOVERNX, 2024"
+  // under a claimed-verified figure, i.e. GovernX citing itself as the primary
+  // source. That is a false citation (see THE ONE INVARIANT). Gate on it.
+  const hasRealSource = String(sourceLabel || "").trim() && !/govern\s*-?x/i.test(sourceLabel);
   return (
     <AbsoluteFill style={{ backgroundColor: COLOR.navy, overflow: "hidden" }}>
       <Vignette />
@@ -67,19 +73,25 @@ export const OpeningHook = ({
       <div style={{ position: "absolute", top: 770, left: SPACE.margin, right: SPACE.margin, opacity: A(f, 60, 88),
         fontFamily: FONT.serif, fontSize: 40, fontStyle: "italic", color: COLOR.mist }}>{secondary}</div>
 
-      {/* evidence cluster — badges grouped with the source, bottom-right */}
-      <div style={{ position: "absolute", bottom: 130, right: SPACE.margin, display: "flex", gap: 14, transform: `scale(${stampIn(f, 30)})`, transformOrigin: "right bottom" }}>
-        <VerifiedBadge delay={30} />
-        <PrimaryBadge label="Primary Source" delay={36} />
-      </div>
-
-      {/* prominent source footer */}
-      <div style={{ position: "absolute", bottom: SPACE.lg, left: SPACE.margin, right: SPACE.margin, opacity: A(f, 40, 56) }}>
-        <div style={{ width: 60, height: 3, backgroundColor: COLOR.red, marginBottom: 10 }} />
-        <div style={{ fontFamily: FONT.mono, fontSize: 26, letterSpacing: "0.08em", color: COLOR.white, textTransform: "uppercase" }}>
-          Source: {sourceLabel}, {sourceYear}
+      {/* evidence cluster — badges grouped with the source, bottom-right.
+          Only shown with a real external source; never self-cite as "VERIFIED". */}
+      {hasRealSource && (
+        <div style={{ position: "absolute", bottom: 130, right: SPACE.margin, display: "flex", gap: 14, transform: `scale(${stampIn(f, 30)})`, transformOrigin: "right bottom" }}>
+          <VerifiedBadge delay={30} />
+          <PrimaryBadge label="Primary Source" delay={36} />
         </div>
-      </div>
+      )}
+
+      {/* prominent source footer — blank when there's no external publisher
+          (year alone, or a "GovernX" self-citation, is not a source). */}
+      {hasRealSource && (
+        <div style={{ position: "absolute", bottom: SPACE.lg, left: SPACE.margin, right: SPACE.margin, opacity: A(f, 40, 56) }}>
+          <div style={{ width: 60, height: 3, backgroundColor: COLOR.red, marginBottom: 10 }} />
+          <div style={{ fontFamily: FONT.mono, fontSize: 26, letterSpacing: "0.08em", color: COLOR.white, textTransform: "uppercase" }}>
+            Source: {sourceLabel}{sourceYear ? `, ${sourceYear}` : ""}
+          </div>
+        </div>
+      )}
     </AbsoluteFill>
   );
 };

@@ -14,7 +14,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { execFileSync } = require("child_process");
+const { execFileSync, spawnSync } = require("child_process");
 const { renderMedia, selectComposition, ensureBrowser } = require("@remotion/renderer");
 const { adaptScene } = require("./adapt");
 
@@ -47,6 +47,19 @@ const FFPROBE = (() => {
     return path.join(path.dirname(pkg), "ffprobe.exe");
   } catch { return "ffprobe"; }
 })();
+
+const FFMPEG = (() => {
+  try {
+    const pkg = require.resolve("@remotion/compositor-win32-x64-msvc/package.json");
+    return path.join(path.dirname(pkg), "ffmpeg.exe");
+  } catch { return "ffmpeg"; }
+})();
+
+// Broadcast loudness target. ElevenLabs narration comes out quiet (~-25 LUFS);
+// YouTube normalises everything to about -14 LUFS, so a quiet upload gets no
+// gain and just sounds weak next to every other channel. Master to -16 LUFS
+// integrated / -1.5 dBTP — firm and executive, with peak headroom, no clipping.
+const LOUD_I = -16, LOUD_TP = -1.5, LOUD_LRA = 11;
 
 // Pull the file id out of any Drive URL shape (/file/d/ID/, ?id=ID, uc?id=ID).
 function extractDriveId(url) {
@@ -216,6 +229,13 @@ async function renderAssembled({ contentId, builtScenes, showCaptions = true, se
     onProgress: ({ progress }) => { if (Math.round(progress * 100) % 10 === 0) onLog(`  ${Math.round(progress * 100)}%`); }
   });
 
+  // ── Master the audio to broadcast loudness ────────────────────────────────
+  // Remotion muxes the raw per-scene narration untouched (~-25 LUFS), so the film
+  // ships far too quiet. Two-pass loudnorm to -16 LUFS / -1.5 dBTP (video copied,
+  // not re-rendered). Best-effort: a failure logs and keeps the un-normalised file
+  // rather than losing the whole render.
+  normalizeLoudness(outputPath, onLog);
+
   // ── Verify the file before calling it done ────────────────────────────────
   // "The render finished" is not the same as "the file is complete". A film once
   // shipped 36 seconds short because the COPY was truncated in transit while the
@@ -241,6 +261,51 @@ async function renderAssembled({ contentId, builtScenes, showCaptions = true, se
 function secToMMSS(sec) {
   const s = Math.max(0, Math.round(sec));
   return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+}
+
+/** Two-pass EBU R128 loudness normalisation, in place.
+ *  Pass 1 measures (audio-only → adts, discarded — the bundled minimal ffmpeg has
+ *  no `null` muxer but loudnorm still prints its JSON to stderr). Pass 2 applies a
+ *  LINEAR gain to the measured values (video stream copied, audio re-encoded aac),
+ *  then swaps the file in. Best-effort: any failure leaves the original untouched. */
+function normalizeLoudness(outputPath, onLog = () => {}) {
+  if (!fs.existsSync(outputPath)) return;
+  const measureTmp = path.join(OUTPUT_DIR, "_loudnorm_measure.aac");
+  const normTmp    = outputPath.replace(/\.mp4$/i, "._norm.mp4");
+  try {
+    // Pass 1 — measure
+    const p1 = spawnSync(FFMPEG, [
+      "-hide_banner", "-nostats", "-i", outputPath, "-map", "0:a",
+      "-af", `loudnorm=I=${LOUD_I}:TP=${LOUD_TP}:LRA=${LOUD_LRA}:print_format=json`,
+      "-c:a", "aac", "-f", "adts", measureTmp, "-y"
+    ], { encoding: "utf8", maxBuffer: 1 << 24 });
+    try { fs.unlinkSync(measureTmp); } catch {}
+    const m = String(p1.stderr || "").match(/\{[\s\S]*?\}/);
+    if (!m) { onLog("  loudness measure produced no data — keeping original audio"); return; }
+    const meas = JSON.parse(m[0]);
+    onLog(`  measured ${meas.input_i} LUFS / TP ${meas.input_tp} dB → mastering to ${LOUD_I} LUFS`);
+
+    // Pass 2 — apply (linear gain, video copied)
+    const af = `loudnorm=I=${LOUD_I}:TP=${LOUD_TP}:LRA=${LOUD_LRA}`
+      + `:measured_I=${meas.input_i}:measured_TP=${meas.input_tp}:measured_LRA=${meas.input_lra}`
+      + `:measured_thresh=${meas.input_thresh}:offset=${meas.target_offset}:linear=true`;
+    const p2 = spawnSync(FFMPEG, [
+      "-hide_banner", "-nostats", "-i", outputPath, "-map", "0",
+      "-c:v", "copy", "-c:a", "aac", "-b:a", "256k", "-af", af,
+      "-movflags", "+faststart", "-f", "mp4", normTmp, "-y"
+    ], { encoding: "utf8", maxBuffer: 1 << 24 });
+    if (p2.status !== 0 || !fs.existsSync(normTmp) || fs.statSync(normTmp).size < 1024) {
+      onLog("  loudness apply failed — keeping original audio");
+      try { fs.unlinkSync(normTmp); } catch {}
+      return;
+    }
+    fs.renameSync(normTmp, outputPath);
+    onLog(`  audio mastered to ${LOUD_I} LUFS / ${LOUD_TP} dBTP ✅`);
+  } catch (e) {
+    onLog(`  loudness normalisation skipped (${e.message}) — keeping original audio`);
+    try { fs.unlinkSync(measureTmp); } catch {}
+    try { fs.unlinkSync(normTmp); } catch {}
+  }
 }
 
 /** Decodes the rendered file and checks it against the intended timeline.

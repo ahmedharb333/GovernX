@@ -66,9 +66,23 @@ const LOUD_I = -16, LOUD_TP = -1.5, LOUD_LRA = 11;
 // looped to full length, with a fade in/out. The bundled ffmpeg has no
 // sidechaincompress, so it's a steady low bed (not auto-ducked); MUSIC_LEVEL tunes
 // how present it sits under the -16 LUFS voice. No file → silently skipped (VO only).
-const MUSIC_BED     = process.env.MUSIC_BED_PATH || path.join(PUBLIC_DIR, "music", "bed.mp3");
+const MUSIC_DIR     = path.join(PUBLIC_DIR, "music");
 const MUSIC_LEVEL   = Number(process.env.MUSIC_LEVEL || 0.16);
 const MUSIC_FADE_IN = 1.5, MUSIC_FADE_OUT = 2.5;
+
+// Resolve the bed: MUSIC_BED_PATH env → public/music/bed.mp3 → the FIRST audio
+// file dropped into public/music/. So the user can just drop any track in the
+// folder without renaming it. Returns null when there's nothing to mix.
+function findMusicBed() {
+  if (process.env.MUSIC_BED_PATH && fs.existsSync(process.env.MUSIC_BED_PATH)) return process.env.MUSIC_BED_PATH;
+  const preferred = path.join(MUSIC_DIR, "bed.mp3");
+  if (fs.existsSync(preferred)) return preferred;
+  try {
+    const f = fs.readdirSync(MUSIC_DIR).find(n => /\.(mp3|m4a|wav|aac|ogg|flac)$/i.test(n));
+    if (f) return path.join(MUSIC_DIR, f);
+  } catch {}
+  return null;
+}
 
 // Pull the file id out of any Drive URL shape (/file/d/ID/, ?id=ID, uc?id=ID).
 function extractDriveId(url) {
@@ -283,8 +297,10 @@ function secToMMSS(sec) {
  *  the loudness master so the combined mix is mastered together. No bed file, or
  *  any failure, leaves the VO-only audio untouched. */
 function mixMusic(outputPath, onLog = () => {}) {
-  if (!fs.existsSync(MUSIC_BED)) { onLog(`no music bed (looked at ${MUSIC_BED}) — VO only`); return; }
+  const MUSIC_BED = findMusicBed();
+  if (!MUSIC_BED) { onLog(`no music file in ${MUSIC_DIR} — VO only (drop any .mp3 there to add a bed)`); return; }
   if (!fs.existsSync(outputPath)) return;
+  onLog(`music bed: ${path.basename(MUSIC_BED)}`);
   const tmp = outputPath.replace(/\.mp4$/i, "._music.mp4");
   try {
     const durRaw = execFileSync(FFPROBE, ["-v", "error", "-show_entries", "format=duration",

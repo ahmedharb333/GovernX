@@ -61,6 +61,15 @@ const FFMPEG = (() => {
 // integrated / -1.5 dBTP — firm and executive, with peak headroom, no clipping.
 const LOUD_I = -16, LOUD_TP = -1.5, LOUD_LRA = 11;
 
+// Optional background-music bed. Drop a file at public/music/bed.mp3 (or point
+// MUSIC_BED_PATH at one) and the assembly mixes it low under the narration —
+// looped to full length, with a fade in/out. The bundled ffmpeg has no
+// sidechaincompress, so it's a steady low bed (not auto-ducked); MUSIC_LEVEL tunes
+// how present it sits under the -16 LUFS voice. No file → silently skipped (VO only).
+const MUSIC_BED     = process.env.MUSIC_BED_PATH || path.join(PUBLIC_DIR, "music", "bed.mp3");
+const MUSIC_LEVEL   = Number(process.env.MUSIC_LEVEL || 0.16);
+const MUSIC_FADE_IN = 1.5, MUSIC_FADE_OUT = 2.5;
+
 // Pull the file id out of any Drive URL shape (/file/d/ID/, ?id=ID, uc?id=ID).
 function extractDriveId(url) {
   const s = String(url || "");
@@ -229,6 +238,11 @@ async function renderAssembled({ contentId, builtScenes, showCaptions = true, se
     onProgress: ({ progress }) => { if (Math.round(progress * 100) % 10 === 0) onLog(`  ${Math.round(progress * 100)}%`); }
   });
 
+  // ── Mix an optional music bed UNDER the narration (before mastering) ──────
+  // Adds life to what is otherwise voice-over-on-silence. Runs before loudnorm so
+  // the combined VO+music is mastered to -16 LUFS together. No-op if no bed file.
+  mixMusic(outputPath, onLog);
+
   // ── Master the audio to broadcast loudness ────────────────────────────────
   // Remotion muxes the raw per-scene narration untouched (~-25 LUFS), so the film
   // ships far too quiet. Two-pass loudnorm to -16 LUFS / -1.5 dBTP (video copied,
@@ -261,6 +275,43 @@ async function renderAssembled({ contentId, builtScenes, showCaptions = true, se
 function secToMMSS(sec) {
   const s = Math.max(0, Math.round(sec));
   return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+}
+
+/** Mix a low background-music bed under the narration, in place (best-effort).
+ *  Loops the bed to the film's length, fades it in/out, and mixes it beneath the
+ *  voice at MUSIC_LEVEL (amix normalize=0 keeps the VO at full level). Runs BEFORE
+ *  the loudness master so the combined mix is mastered together. No bed file, or
+ *  any failure, leaves the VO-only audio untouched. */
+function mixMusic(outputPath, onLog = () => {}) {
+  if (!fs.existsSync(MUSIC_BED)) { onLog(`no music bed (looked at ${MUSIC_BED}) — VO only`); return; }
+  if (!fs.existsSync(outputPath)) return;
+  const tmp = outputPath.replace(/\.mp4$/i, "._music.mp4");
+  try {
+    const durRaw = execFileSync(FFPROBE, ["-v", "error", "-show_entries", "format=duration",
+      "-of", "default=nk=1:nw=1", outputPath], { encoding: "utf8" });
+    const D = parseFloat(String(durRaw).trim());
+    if (!D) { onLog("  music: could not read film duration — skipping"); return; }
+    // fade in over MUSIC_FADE_IN, fade out over the last MUSIC_FADE_OUT (commas escaped for the filter expr)
+    const vol = `${MUSIC_LEVEL}*min(1\\,t/${MUSIC_FADE_IN})*min(1\\,(${D.toFixed(2)}-t)/${MUSIC_FADE_OUT})`;
+    const r = spawnSync(FFMPEG, [
+      "-hide_banner", "-nostats",
+      "-i", outputPath,
+      "-stream_loop", "-1", "-i", MUSIC_BED,
+      "-filter_complex", `[1:a]volume='${vol}':eval=frame[m];[0:a][m]amix=inputs=2:duration=first:normalize=0[a]`,
+      "-map", "0:v", "-c:v", "copy", "-map", "[a]", "-c:a", "aac", "-b:a", "256k",
+      "-movflags", "+faststart", "-f", "mp4", tmp, "-y"
+    ], { encoding: "utf8", maxBuffer: 1 << 24 });
+    if (r.status !== 0 || !fs.existsSync(tmp) || fs.statSync(tmp).size < 1024) {
+      onLog("  music mix failed — keeping VO-only audio");
+      try { fs.unlinkSync(tmp); } catch {}
+      return;
+    }
+    fs.renameSync(tmp, outputPath);
+    onLog(`  mixed music bed at level ${MUSIC_LEVEL} (fade ${MUSIC_FADE_IN}s/${MUSIC_FADE_OUT}s) ✅`);
+  } catch (e) {
+    onLog(`  music mix skipped (${e.message})`);
+    try { fs.unlinkSync(tmp); } catch {}
+  }
 }
 
 /** Two-pass EBU R128 loudness normalisation, in place.

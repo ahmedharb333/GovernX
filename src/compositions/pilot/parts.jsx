@@ -31,7 +31,7 @@ export const Masthead = ({ code = "CASE FILE", delay = 0 }) => {
         <div style={{ fontFamily: FONT.serif, fontSize: 30, fontWeight: 700, color: COLOR.white, letterSpacing: "0.06em" }}>
           GOVERN<span style={{ color: COLOR.red }}>X</span>
         </div>
-        <div style={{ fontFamily: FONT.mono, fontSize: SIZE.micro, letterSpacing: TRACK.stamp, color: COLOR.mist, textTransform: "uppercase" }}>
+        <div style={{ fontFamily: FONT.mono, fontSize: 18, fontWeight: 700, letterSpacing: TRACK.stamp, color: COLOR.white, textTransform: "uppercase" }}>
           {code}
         </div>
       </div>

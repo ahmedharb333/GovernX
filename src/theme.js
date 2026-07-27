@@ -37,8 +37,12 @@ export const COLOR = {
 
   // Text on navy
   white     : "#FFFFFF",
-  mist      : "#AEB9CC",   // muted label on navy
-  mistDim   : "#6E7A90",
+  // Secondary text on navy. Brightened for readability — the old values
+  // (#AEB9CC / #6E7A90) rendered years, kickers, captions and source lines
+  // "barely readable" at small sizes. Still a clear step below white so the
+  // hierarchy holds, but now legible on mobile.
+  mist      : "#C8D2E1",   // was #AEB9CC — captions, labels, source lines
+  mistDim   : "#9AA8BE",   // was #6E7A90 — faintest tier (GOVERNANCE ANGLE, notes)
 
   // Trust
   verified  : "#1E7A46",   // verified claim badge

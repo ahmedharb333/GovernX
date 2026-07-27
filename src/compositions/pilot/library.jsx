@@ -29,7 +29,7 @@ const Frame = ({ code, title, children, bg = COLOR.navy }) => {
       <Masthead code={code} delay={0} />
       {title && (
         <div style={{ position: "absolute", top: 128, left: SPACE.margin, right: SPACE.margin, opacity: A(f, 4, 18),
-          fontFamily: FONT.display, fontWeight: 800, fontSize: SIZE.title, color: COLOR.white, letterSpacing: TRACK.tight }}>
+          fontFamily: FONT.serif, fontWeight: 700, fontSize: 54, color: COLOR.white }}>
           {title}
         </div>
       )}

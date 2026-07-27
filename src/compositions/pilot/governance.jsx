@@ -24,7 +24,7 @@ const Shell = ({ code, title, children }) => {
       <Vignette />
       <Masthead code={code} delay={0} />
       {title && <div style={{ position: "absolute", top: 128, left: SPACE.margin, right: SPACE.margin,
-        fontFamily: FONT.displayHeavy, fontSize: 56, textTransform: "uppercase", color: COLOR.white, letterSpacing: TRACK.tight, opacity: A(f, 4, 18) }}>{title}</div>}
+        fontFamily: FONT.serif, fontWeight: 700, fontSize: 54, color: COLOR.white, opacity: A(f, 4, 18) }}>{title}</div>}
       {children}
     </AbsoluteFill>
   );

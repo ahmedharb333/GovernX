@@ -29,8 +29,8 @@ const Shell = ({ code, title, titleColor = COLOR.white, children }) => {
       <Masthead code={code} delay={0} />
       {title && (
         <div style={{ position: "absolute", top: 128, left: SPACE.margin, right: SPACE.margin,
-          fontFamily: FONT.displayHeavy, fontSize: 58, textTransform: "uppercase", color: titleColor,
-          letterSpacing: TRACK.tight, opacity: A(f, 4, 18) }}>{title}</div>
+          fontFamily: FONT.serif, fontWeight: 700, fontSize: 54, color: titleColor,
+          opacity: A(f, 4, 18) }}>{title}</div>
       )}
       {children}
     </AbsoluteFill>
@@ -137,7 +137,7 @@ export const ControlPerimeter = ({
     <AbsoluteFill style={{ backgroundColor: COLOR.navy, overflow: "hidden" }}>
       <Vignette />
       <Masthead code="THE ROOT CAUSE" delay={0} />
-      <div style={{ position: "absolute", top: 128, left: SPACE.margin, right: SPACE.margin, fontFamily: FONT.serif, fontWeight: 700, fontSize: 52, color: COLOR.white, opacity: A(f, 4, 20) }}>{title}</div>
+      <div style={{ position: "absolute", top: 128, left: SPACE.margin, right: SPACE.margin, fontFamily: FONT.serif, fontWeight: 700, fontSize: 54, color: COLOR.white, opacity: A(f, 4, 20) }}>{title}</div>
       <div style={{ position: "absolute", left: bx, top: by - 40, fontFamily: FONT.mono, fontSize: SIZE.micro, letterSpacing: "0.16em", color: COLOR.mistDim, opacity: A(f, 14, 26) }}>{perimeterLabel}</div>
       {/* perimeter box */}
       <div style={{ position: "absolute", left: bx, top: by, width: bw, height: bh, border: `2px solid ${COLOR.mistDim}`, borderRadius: 14, opacity: A(f, 12, 28) }} />

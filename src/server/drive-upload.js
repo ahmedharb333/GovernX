@@ -71,7 +71,8 @@ async function uploadToDrive(localFilePath, filename, contentId) {
       mimeType: 'video/mp4',
       body    : fs.createReadStream(localFilePath)
     },
-    fields: 'id,name,webViewLink,webContentLink'
+    fields: 'id,name,webViewLink,webContentLink',
+    supportsAllDrives: true            // works whether DRIVE_FOLDER_ID is My Drive or a Shared Drive
   });
 
   const file = response.data;
@@ -79,7 +80,8 @@ async function uploadToDrive(localFilePath, filename, contentId) {
   // Make file accessible to anyone with the link
   await drive.permissions.create({
     fileId      : file.id,
-    requestBody : { role: 'reader', type: 'anyone' }
+    requestBody : { role: 'reader', type: 'anyone' },
+    supportsAllDrives: true
   });
 
   return {
@@ -106,7 +108,9 @@ async function getOrCreateContentFolder(drive, contentId) {
   const search = await drive.files.list({
     q         : `name='${contentId}' and mimeType='application/vnd.google-apps.folder' and '${PRODUCTION_FOLDER_ID}' in parents and trashed=false`,
     fields    : 'files(id,name)',
-    spaces    : 'drive'
+    spaces    : 'drive',
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true
   });
 
   if (search.data.files && search.data.files.length > 0) {
@@ -120,7 +124,8 @@ async function getOrCreateContentFolder(drive, contentId) {
       mimeType: 'application/vnd.google-apps.folder',
       parents : [PRODUCTION_FOLDER_ID]
     },
-    fields: 'id'
+    fields: 'id',
+    supportsAllDrives: true
   });
 
   return folder.data.id;
@@ -132,12 +137,14 @@ async function deleteExistingFile(drive, filename, folderId) {
   try {
     const search = await drive.files.list({
       q     : `name='${filename}' and '${folderId}' in parents and trashed=false`,
-      fields: 'files(id)'
+      fields: 'files(id)',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true
     });
 
     if (search.data.files && search.data.files.length > 0) {
       for (const file of search.data.files) {
-        await drive.files.delete({ fileId: file.id });
+        await drive.files.delete({ fileId: file.id, supportsAllDrives: true });
       }
     }
   } catch (e) {

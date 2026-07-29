@@ -130,6 +130,7 @@ app.get("/research/discover/:id", (req, res) => {
 //     length, adapts REMOTION_DATA → case-file props, renders ONE synced MP4.
 // Long render (minutes) → async job + poll, like /research/job.
 const assemble = require("./assemble");
+const driveUpload = require("./drive-upload");
 app.post("/assemble/job", (req, res) => {
   const { contentId, scenes, showCaptions } = req.body || {};
   if (!contentId || !Array.isArray(scenes) || scenes.length === 0) {
@@ -146,11 +147,32 @@ app.post("/assemble/job", (req, res) => {
       onLog: (m) => console.log(`[Assemble ${contentId}] ${m}`)
     });
     const filename = path.basename(r.outputPath);
-    // `bytes` is returned so the client can prove it downloaded the whole file.
-    // `sceneTimings` gives the client real per-scene start times for chapters.
+
+    // Upload the finished MP4 to Drive FROM THE SERVER — streamed
+    // (fs.createReadStream), so memory stays flat at any file size. This replaces
+    // the Apps Script download step, which materialised the whole file as a
+    // number[] (~8x its size in RAM) and OOMed on ~44MB+ films. If Drive isn't
+    // configured (no service-account.json / DRIVE_FOLDER_ID), `drive` stays null
+    // and Apps Script falls back to downloading.
+    let drive = null, driveError = "";
+    if (driveUpload.isDriveConfigured()) {
+      try {
+        drive = await driveUpload.uploadToDrive(r.outputPath, `${contentId}_final_video.mp4`, contentId);
+        console.log(`[Assemble ${contentId}] uploaded to Drive → ${drive.driveUrl}`);
+      } catch (e) {
+        driveError = e.message;
+        console.error(`[Assemble ${contentId}] Drive upload failed: ${e.message}`);
+      }
+    } else {
+      console.log(`[Assemble ${contentId}] Drive not configured — Apps Script will download instead.`);
+    }
+
+    // `bytes` is returned so the client can prove it downloaded the whole file
+    // (fallback path). `sceneTimings` gives the client real per-scene start times.
     return { filename, url: `http://localhost:${PORT}/output/${filename}`,
       totalFrames: r.totalFrames, durationSec: +(r.totalFrames / 30).toFixed(1), sceneCount: r.sceneCount,
-      bytes: r.bytes, decodedFrames: r.decodedFrames, sceneTimings: r.sceneTimings };
+      bytes: r.bytes, decodedFrames: r.decodedFrames, sceneTimings: r.sceneTimings,
+      drive, driveError };
   })()
     .then(result => { jobs.set(jobId, { status: "done", startedAt: Date.now(), result, error: "" });
       console.log(`[Assemble] job ${jobId} done — ${result.sceneCount} scenes, ${result.durationSec}s`); })

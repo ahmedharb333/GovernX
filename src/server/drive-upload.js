@@ -14,7 +14,9 @@
    7. Set DRIVE_PRODUCTION_FOLDER_ID in config below
    ============================================================================ */
 
-const { google } = require('googleapis');
+// `googleapis` is required LAZILY inside getDriveClient() (not at module load), so
+// the render server still starts even if the package isn't installed yet — Drive
+// upload simply stays inactive and Apps Script falls back to downloading.
 const fs          = require('fs');
 const path        = require('path');
 
@@ -30,6 +32,7 @@ const PRODUCTION_FOLDER_ID = process.env.DRIVE_FOLDER_ID || '';
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 function getDriveClient() {
+  const { google } = require('googleapis');   // lazy load — see note at top of file
   if (!fs.existsSync(SERVICE_ACCOUNT_KEY)) {
     throw new Error(
       'Service account key not found at: ' + SERVICE_ACCOUNT_KEY + '\n' +
@@ -146,7 +149,9 @@ async function deleteExistingFile(drive, filename, folderId) {
 
 // ── Check if Drive upload is configured ───────────────────────────────────────
 function isDriveConfigured() {
-  return fs.existsSync(SERVICE_ACCOUNT_KEY) && PRODUCTION_FOLDER_ID !== '';
+  if (!fs.existsSync(SERVICE_ACCOUNT_KEY) || !PRODUCTION_FOLDER_ID) return false;
+  try { require.resolve('googleapis'); return true; }   // package present?
+  catch { return false; }
 }
 
 

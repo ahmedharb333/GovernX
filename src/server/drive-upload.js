@@ -1,17 +1,21 @@
 /* ============================================================================
    drive-upload.js — GovernX Remotion Server
-   Uploads rendered MP4 files directly to Google Drive
-   Uses a Service Account — no OAuth flow needed
+   Uploads rendered MP4s directly to Google Drive, STREAMED (flat memory at any
+   file size). Replaces the Apps Script download step, which built the file as a
+   number[] (~8x its size) and OOMed on large films.
+
+   AUTH: OAuth user credentials — the server acts AS your Google account, so files
+   are owned by you (no service-account storage-quota issue), and it sidesteps the
+   org policy iam.disableServiceAccountKeyCreation that blocks service-account keys.
 
    SETUP (one time):
-   1. Go to https://console.cloud.google.com
-   2. Create project "GovernX Renderer"
-   3. Enable "Google Drive API"
-   4. Create Service Account → download JSON key → save as:
-      C:\Users\Lenovo\GovernX\governx-remotion\service-account.json
-   5. Copy the service account email (client_email in the JSON)
-   6. Share your GovernX Drive production folder with that email (Editor access)
-   7. Set DRIVE_PRODUCTION_FOLDER_ID in config below
+   1. Google Cloud Console → APIs & Services → Credentials → Create Credentials →
+      OAuth client ID → type "Desktop app". Download its JSON → save as:
+         governx-remotion/oauth-client.json
+   2. In governx-remotion/, run:  node authorize-drive.js
+      Open the printed URL, sign in as the Drive owner, grant Drive access. It
+      writes governx-remotion/drive-token.json (refresh token). Both are gitignored.
+   3. Set DRIVE_FOLDER_ID in .env to your production folder's ID.
    ============================================================================ */
 
 // `googleapis` is required LAZILY inside getDriveClient() (not at module load), so
@@ -21,31 +25,31 @@ const fs          = require('fs');
 const path        = require('path');
 
 // ── Config ────────────────────────────────────────────────────────────────────
-// Path to your downloaded service account JSON key
-const SERVICE_ACCOUNT_KEY = path.join(__dirname, '../../service-account.json');
+// OAuth client (client_id + client_secret) downloaded from Google Cloud Console
+// as a "Desktop app" client, and the refresh token captured by authorize-drive.js.
+// Both are gitignored secrets.
+const OAUTH_CLIENT_PATH = process.env.DRIVE_OAUTH_CLIENT || path.join(__dirname, '../../oauth-client.json');
+const TOKEN_PATH        = process.env.DRIVE_OAUTH_TOKEN  || path.join(__dirname, '../../drive-token.json');
 
-// Your GovernX Drive production folder ID
-// Get it from the URL when you open the folder in Drive:
-// https://drive.google.com/drive/folders/THIS_PART_IS_THE_ID
-// Set via environment variable or hardcode below
+// Your GovernX Drive production folder ID (from the folder URL:
+// https://drive.google.com/drive/folders/THIS_PART_IS_THE_ID)
 const PRODUCTION_FOLDER_ID = process.env.DRIVE_FOLDER_ID || '';
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
+// ── Auth (OAuth user credentials) ─────────────────────────────────────────────
 function getDriveClient() {
   const { google } = require('googleapis');   // lazy load — see note at top of file
-  if (!fs.existsSync(SERVICE_ACCOUNT_KEY)) {
-    throw new Error(
-      'Service account key not found at: ' + SERVICE_ACCOUNT_KEY + '\n' +
-      'Download it from Google Cloud Console and save it there.'
-    );
+  if (!fs.existsSync(OAUTH_CLIENT_PATH)) {
+    throw new Error('OAuth client not found at: ' + OAUTH_CLIENT_PATH +
+      '\nCreate an OAuth client ID (Desktop app) in Google Cloud Console and save its JSON there.');
   }
-
-  const auth = new google.auth.GoogleAuth({
-    keyFile: SERVICE_ACCOUNT_KEY,
-    scopes : ['https://www.googleapis.com/auth/drive']
-  });
-
-  return google.drive({ version: 'v3', auth });
+  if (!fs.existsSync(TOKEN_PATH)) {
+    throw new Error('Drive not authorized yet. In governx-remotion/, run:  node authorize-drive.js  — it creates ' + TOKEN_PATH);
+  }
+  const creds  = JSON.parse(fs.readFileSync(OAUTH_CLIENT_PATH, 'utf8'));
+  const c      = creds.installed || creds.web || creds;
+  const oAuth2 = new google.auth.OAuth2(c.client_id, c.client_secret);
+  oAuth2.setCredentials(JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8')));   // { refresh_token, ... } — auto-refreshes access tokens
+  return google.drive({ version: 'v3', auth: oAuth2 });
 }
 
 
@@ -156,7 +160,7 @@ async function deleteExistingFile(drive, filename, folderId) {
 
 // ── Check if Drive upload is configured ───────────────────────────────────────
 function isDriveConfigured() {
-  if (!fs.existsSync(SERVICE_ACCOUNT_KEY) || !PRODUCTION_FOLDER_ID) return false;
+  if (!fs.existsSync(OAUTH_CLIENT_PATH) || !fs.existsSync(TOKEN_PATH) || !PRODUCTION_FOLDER_ID) return false;
   try { require.resolve('googleapis'); return true; }   // package present?
   catch { return false; }
 }

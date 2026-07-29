@@ -9,3 +9,9 @@ research_archive/
 research_cache/
 *.mp4
 *.mov
+
+# Secrets — NEVER commit (public repo). Drive service-account key for drive-upload.js
+service-account.json
+*.serviceaccount.json
+oauth-client.json
+drive-token.json

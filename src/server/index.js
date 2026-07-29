@@ -88,6 +88,42 @@ app.get("/research/job/:id", (req, res) => {
   res.json({ ok: true, status: "done", ...job.result });
 });
 
+// ── RESEARCH: source DISCOVERY (the step Stage 2 was missing) ─────────────────
+// POST /research/discover  { company, brief, maxTest? }
+//   → web_search finds candidate URLs → each is fetch-tested with the SAME
+//     engine ② uses → returns only reachable URLs (sourceUrls) to paste into
+//     Idea Catalogue Source_URLs before ② runs. Async (search + fetch-tests can
+//     take ~30–60s), polled like /research/job.
+const discover = require("./research/discover");
+app.post("/research/discover", (req, res) => {
+  const { company, brief } = req.body || {};
+  if (!company && !brief) {
+    return res.status(400).json({ ok: false, error: "company or brief required" });
+  }
+  const jobId = "dsc_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  jobs.set(jobId, { status: "running", startedAt: Date.now(), result: null, error: "" });
+  res.json({ ok: true, jobId });
+
+  discover.discoverSources(req.body || {})
+    .then(result => {
+      jobs.set(jobId, { status: "done", startedAt: Date.now(), result, error: "" });
+      console.log(`[Discover] job ${jobId} done — ${result.stats.fetchable}/${result.stats.candidates} fetchable`);
+      (result.warnings || []).forEach(w => console.warn(`[Discover] ⚠ ${w}`));
+    })
+    .catch(err => {
+      jobs.set(jobId, { status: "error", startedAt: Date.now(), result: null, error: err.message });
+      console.error(`[Discover] job ${jobId} failed: ${err.message}`);
+    });
+});
+
+app.get("/research/discover/:id", (req, res) => {
+  const job = jobs.get(req.params.id);
+  if (!job) return res.status(404).json({ ok: false, error: "unknown jobId" });
+  if (job.status === "running") return res.json({ ok: true, status: "running", elapsedMs: Date.now() - job.startedAt });
+  if (job.status === "error")   return res.json({ ok: false, status: "error", error: job.error });
+  res.json({ ok: true, status: "done", ...job.result });
+});
+
 // ── ASSEMBLE: Remotion film assembly (replaces Shotstack / Stage 9B) ──────────
 // POST /assemble/job  { contentId, scenes:[{sceneNum,type,remotionData,voiceoverSync,audioUrl}], showCaptions }
 //   → downloads each scene's public 7B audio, locks each scene to its audio

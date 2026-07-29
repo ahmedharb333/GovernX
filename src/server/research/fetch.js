@@ -27,13 +27,23 @@ const BROWSER_HEADERS = {
   "Accept-Language": "en-US,en;q=0.9"
 };
 
+// Node's fetch has NO default timeout, so a host that accepts the connection and
+// then never responds blocks the caller until the socket eventually dies — which
+// stalled discovery for ~15 min on one dead candidate, and could stall a verify
+// build the same way. Abort after FETCH_TIMEOUT_MS (default 15s) with a clear
+// reason. Override via env for a slow primary source.
+const FETCH_TIMEOUT_MS = Math.max(1000, parseInt(process.env.RESEARCH_FETCH_TIMEOUT_MS, 10) || 15000);
+
 async function fetchDocument(url) {
   const out = { ok: false, url, finalUrl: url, contentType: "", title: "",
                 text: "", wordCount: 0, hash: "", archivePath: "", error: "" };
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), FETCH_TIMEOUT_MS);
   try {
     const resp = await fetch(url, {
       redirect: "follow",
-      headers : BROWSER_HEADERS
+      headers : BROWSER_HEADERS,
+      signal  : ac.signal
     });
     out.finalUrl    = resp.url || url;
     out.contentType = (resp.headers.get("content-type") || "").toLowerCase();
@@ -77,7 +87,11 @@ async function fetchDocument(url) {
     out.archivePath = archive(out);
     out.ok = true;
   } catch (err) {
-    out.error = err.message;
+    out.error = (err && err.name === "AbortError")
+      ? `Timed out after ${FETCH_TIMEOUT_MS / 1000}s with no response — host unreachable, hanging, or blocking the fetch`
+      : err.message;
+  } finally {
+    clearTimeout(timer);
   }
   return out;
 }

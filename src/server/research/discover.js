@@ -56,7 +56,7 @@ Use the web_search tool to actually find current, working URLs. Then report the 
  *
  * @returns {{ urls: {url:string,title:string}[], finalText: string, usage: object }}
  */
-async function runSearch({ system, prompt, model, maxTokens = 6000, maxRounds = 4, maxUses = 8 }) {
+async function runSearch({ system, prompt, model, maxTokens = 6000, maxRounds = 3, maxUses = 6 }) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY not set (add it to governx-remotion/.env).");
 
@@ -178,8 +178,10 @@ function dedupCandidates(list) {
 }
 
 // Fetch-test with bounded concurrency so we don't hammer hosts or block for
-// minutes on a long candidate list.
-async function testFetchable(candidates, concurrency = 4) {
+// minutes on a long candidate list. Each fetch is already capped by fetch.js's
+// AbortController (~15s), so concurrency 8 bounds the whole test to a couple of
+// 15s waves even if several candidates hang.
+async function testFetchable(candidates, concurrency = 8) {
   const results = new Array(candidates.length);
   let next = 0;
   async function worker() {
@@ -218,7 +220,7 @@ async function testFetchable(candidates, concurrency = 4) {
 async function discoverSources(req) {
   const company = (req.company || "").trim();
   const brief   = (req.brief   || "").trim();
-  const maxTest = Math.max(1, Math.min(30, req.maxTest || 15));
+  const maxTest = Math.max(1, Math.min(30, req.maxTest || 12));
   if (!company && !brief) throw new Error("discoverSources needs at least a company or a brief.");
 
   const prompt =
@@ -231,7 +233,7 @@ async function discoverSources(req) {
     `Prefer primary records over commentary, and readable pages over paywalled ones.`;
 
   const { urls, finalText, usage } = await runSearch({
-    system: DISCOVER_SYSTEM, prompt, model: DISCOVER_MODEL, maxUses: req.maxUses || 8
+    system: DISCOVER_SYSTEM, prompt, model: DISCOVER_MODEL, maxUses: req.maxUses || 6
   });
 
   const candidates = dedupCandidates([...urls, ...urlsFromText(finalText)]).slice(0, maxTest);

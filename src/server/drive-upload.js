@@ -112,23 +112,29 @@ async function getOrCreateContentFolder(drive, contentId) {
     );
   }
 
-  // Search for existing subfolder
+  // The pipeline's per-video subfolders are named "{contentId} — {company}"
+  // (e.g. "GX-2607-TECH-002 — Blackberry"), created by Apps Script in earlier
+  // stages. Match by PREFIX so the film saves INTO that existing folder rather
+  // than creating a bare "{contentId}" duplicate beside it. `name contains` is a
+  // substring query; we then keep only a real prefix match (exact, or "{id} — …").
+  const id = String(contentId || '').trim();
   const search = await drive.files.list({
-    q         : `name='${contentId}' and mimeType='application/vnd.google-apps.folder' and '${PRODUCTION_FOLDER_ID}' in parents and trashed=false`,
+    q         : `mimeType='application/vnd.google-apps.folder' and '${PRODUCTION_FOLDER_ID}' in parents and trashed=false and name contains '${id}'`,
     fields    : 'files(id,name)',
     spaces    : 'drive',
     supportsAllDrives: true,
-    includeItemsFromAllDrives: true
+    includeItemsFromAllDrives: true,
+    pageSize  : 100
   });
+  const files = search.data.files || [];
+  const match = files.find(f => f.name === id) ||
+                files.find(f => f.name.startsWith(id + ' '));   // "{id} — {company}"
+  if (match) return match.id;
 
-  if (search.data.files && search.data.files.length > 0) {
-    return search.data.files[0].id;
-  }
-
-  // Create new subfolder
+  // None exists — create one named just the contentId.
   const folder = await drive.files.create({
     requestBody: {
-      name    : contentId,
+      name    : id,
       mimeType: 'application/vnd.google-apps.folder',
       parents : [PRODUCTION_FOLDER_ID]
     },

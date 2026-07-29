@@ -32,8 +32,12 @@ const OAUTH_CLIENT_PATH = process.env.DRIVE_OAUTH_CLIENT || path.join(__dirname,
 const TOKEN_PATH        = process.env.DRIVE_OAUTH_TOKEN  || path.join(__dirname, '../../drive-token.json');
 
 // Your GovernX Drive production folder ID (from the folder URL:
-// https://drive.google.com/drive/folders/THIS_PART_IS_THE_ID)
-const PRODUCTION_FOLDER_ID = process.env.DRIVE_FOLDER_ID || '';
+// https://drive.google.com/drive/folders/THIS_PART_IS_THE_ID). The env.template
+// placeholder is treated as "not set" so isDriveConfigured() can't report ready
+// while the folder id is still the placeholder (which would upload nowhere and
+// silently fall back to the OOM download path).
+const _folderRaw = (process.env.DRIVE_FOLDER_ID || '').trim();
+const PRODUCTION_FOLDER_ID = _folderRaw === 'your_production_folder_id_here' ? '' : _folderRaw;
 
 // ── Auth (OAuth user credentials) ─────────────────────────────────────────────
 function getDriveClient() {

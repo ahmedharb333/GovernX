@@ -109,7 +109,7 @@ export const CaseLineGraph = ({
           </g>
         ))}
       </svg>
-      {note && <div style={{ position: "absolute", top: 210, left: SPACE.margin, fontFamily: FONT.mono, fontSize: SIZE.micro, letterSpacing: "0.06em", color: COLOR.mistDim, opacity: A(f, 10, 24) }}>{note}</div>}
+      {note && <div style={{ position: "absolute", top: 210, left: SPACE.margin, fontFamily: FONT.mono, fontWeight: 700, fontSize: SIZE.micro, letterSpacing: "0.06em", color: COLOR.mistDim, opacity: A(f, 10, 24) }}>{note}</div>}
       <SourceFooter publisher={source.publisher} year={source.year} docType="" delay={54} bottom={SPACE.lg} />
     </Frame>
   );
@@ -184,13 +184,13 @@ export const CaseKPIDashboard = ({
             opacity: A(f, d, d + 16), transform: `translateY(${A(f, d, d + 16, 24, 0)}px)`
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: FONT.mono, fontSize: SIZE.micro, letterSpacing: TRACK.label, color: COLOR.mist }}>{k.label}</span>
+              <span style={{ fontFamily: FONT.mono, fontWeight: 700, fontSize: SIZE.micro, letterSpacing: TRACK.label, color: COLOR.mist }}>{k.label}</span>
               {k.tag && <span style={{ fontFamily: FONT.sans, fontSize: 14, fontWeight: 800, letterSpacing: "0.1em", color: k.tag === "Company" ? COLOR.yellowInk : COLOR.primaryInk, backgroundColor: k.tag === "Company" ? COLOR.yellow : COLOR.primaryBg, padding: "4px 10px", borderRadius: 999 }}>{k.tag.toUpperCase()}</span>}
             </div>
             <div style={{ fontFamily: FONT.displayHeavy, fontSize: fitValueSize(k.value, 110), lineHeight: 1.02,
               color: k.highlight ? COLOR.red : COLOR.white, marginTop: 10,
               whiteSpace: "nowrap", overflow: "hidden" }}>{k.value}</div>
-            <div style={{ fontFamily: FONT.sans, fontSize: SIZE.label, color: COLOR.mist, marginTop: 6 }}>{k.context}</div>
+            <div style={{ fontFamily: FONT.sans, fontWeight: 600, fontSize: SIZE.label, color: COLOR.mist, marginTop: 6 }}>{k.context}</div>
           </div>
         );
       })}
@@ -407,7 +407,7 @@ export const CaseSplit = ({
       </div>
       {rows.map((r, i) => (
         <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "20px 0", borderTop: `1px solid ${COLOR.navyPanel}` }}>
-          <span style={{ fontFamily: FONT.sans, fontSize: SIZE.body, color: COLOR.mist, maxWidth: 380 }}>{r[0]}</span>
+          <span style={{ fontFamily: FONT.sans, fontWeight: 600, fontSize: SIZE.body, color: COLOR.mist, maxWidth: 380 }}>{r[0]}</span>
           <span style={{ fontFamily: FONT.displayHeavy, fontSize: 52, color: accent ? COLOR.white : COLOR.mist, textAlign: "right" }}>{r[1]}</span>
         </div>
       ))}

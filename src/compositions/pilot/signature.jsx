@@ -234,7 +234,7 @@ export const BeatTimeline = ({
           <div key={i} style={{ position: "absolute", left: px - 200, width: 400, top: y - 240, textAlign: "center",
             opacity: A(f, d, d + 16), transform: `translateY(${A(f, d, d + 16, 18, 0)}px)` }}>
             <div style={{ fontFamily: FONT.displayHeavy, fontSize: 96, color: COLOR.white, lineHeight: 0.9 }}>{b.year}</div>
-            <div style={{ fontFamily: FONT.sans, fontSize: 25, color: COLOR.mist, marginTop: 16, lineHeight: 1.3 }}>{b.event}</div>
+            <div style={{ fontFamily: FONT.sans, fontWeight: 600, fontSize: 25, color: COLOR.mist, marginTop: 16, lineHeight: 1.3 }}>{b.event}</div>
           </div>
         );
       })}
@@ -309,7 +309,7 @@ export const CaseTimeline = ({
             {yr ? <div style={{ fontFamily: FONT.displayHeavy,
               fontSize: yr.length <= 6 ? 38 : yr.length <= 10 ? 30 : 24,
               color: COLOR.white, lineHeight: 1.05, whiteSpace: "nowrap" }}>{yr}</div> : null}
-            {ev ? <div style={{ fontFamily: FONT.sans, fontSize: 17, color: COLOR.mist, marginTop: 4, lineHeight: 1.25 }}>{ev}</div> : null}
+            {ev ? <div style={{ fontFamily: FONT.sans, fontWeight: 600, fontSize: 17, color: COLOR.mist, marginTop: 4, lineHeight: 1.25 }}>{ev}</div> : null}
           </div>
         );
       })}

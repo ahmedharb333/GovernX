@@ -71,7 +71,7 @@ export const OpeningHook = ({
 
       {/* secondary reveal — keeps motion past 1s */}
       <div style={{ position: "absolute", top: 770, left: SPACE.margin, right: SPACE.margin, opacity: A(f, 60, 88),
-        fontFamily: FONT.serif, fontSize: 40, fontStyle: "italic", color: COLOR.mist }}>{secondary}</div>
+        fontFamily: FONT.serif, fontWeight: 600, fontSize: 40, fontStyle: "italic", color: COLOR.mist }}>{secondary}</div>
 
       {/* evidence cluster — badges grouped with the source, bottom-right.
           Only shown with a real external source; never self-cite as "VERIFIED". */}
@@ -128,7 +128,7 @@ export const StatPoster = ({
           fontSize: 68, color: COLOR.white, textTransform: "uppercase", letterSpacing: TRACK.tight,
           lineHeight: 1.02 }}>{caption}</div>
         {sublabel ? <div style={{ opacity: A(f, 30, 44), fontFamily: FONT.serif, fontStyle: "italic",
-          fontSize: 36, color: COLOR.mist }}>{sublabel}</div> : null}
+          fontWeight: 600, fontSize: 36, color: COLOR.mist }}>{sublabel}</div> : null}
       </div>
       <div style={{ position: "absolute", bottom: 128, right: SPACE.margin, transform: `scale(${stampIn(f, 36)})`, transformOrigin: "right bottom" }}>
         <div style={{ display: "inline-flex", alignItems: "center", backgroundColor: ATT.bg, borderRadius: 999, padding: "6px 16px" }}>
@@ -172,7 +172,7 @@ export const VerdictCard = ({
       </div>
       <div style={{ position: "absolute", bottom: 110, left: SPACE.margin, opacity: A(f, 80, 100) }}>
         <div style={{ fontFamily: FONT.serif, fontWeight: 700, fontSize: 44, color: COLOR.white }}>GOVERN<span style={{ color: COLOR.red }}>X</span></div>
-        <div style={{ fontFamily: FONT.mono, fontSize: SIZE.label, letterSpacing: TRACK.label, color: COLOR.mist, marginTop: 6, textTransform: "uppercase" }}>{signOff}</div>
+        <div style={{ fontFamily: FONT.mono, fontWeight: 700, fontSize: SIZE.label, letterSpacing: TRACK.label, color: COLOR.mist, marginTop: 6, textTransform: "uppercase" }}>{signOff}</div>
       </div>
     </AbsoluteFill>
   );

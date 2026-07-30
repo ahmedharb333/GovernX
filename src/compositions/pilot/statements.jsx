@@ -55,7 +55,7 @@ export const StatementCard = ({
             {renderEmphasis(mainText)}
           </div>
           <div style={{ width: A(f, 26, 46, 0, 640), maxWidth: "55%", height: 3, backgroundColor: COLOR.red, marginTop: 34, marginBottom: 30 }} />
-          {subText && <div style={{ fontFamily: FONT.sans, fontSize: SIZE.h2, lineHeight: 1.4, color: COLOR.mist, opacity: A(f, 40, 58), maxWidth: 1300 }}>{subText}</div>}
+          {subText && <div style={{ fontFamily: FONT.sans, fontWeight: 600, fontSize: SIZE.h2, lineHeight: 1.4, color: COLOR.mist, opacity: A(f, 40, 58), maxWidth: 1300 }}>{subText}</div>}
         </div>
       )}
 
@@ -66,7 +66,7 @@ export const StatementCard = ({
             {renderEmphasis(mainText)}
           </div>
           <div style={{ width: A(f, 30, 52, 0, 520), height: 4, backgroundColor: COLOR.red, marginTop: 30, marginBottom: 28 }} />
-          {subText && <div style={{ fontFamily: FONT.sans, fontSize: SIZE.h2, color: COLOR.mist, opacity: A(f, 44, 62), letterSpacing: "0.02em" }}>{subText}</div>}
+          {subText && <div style={{ fontFamily: FONT.sans, fontWeight: 600, fontSize: SIZE.h2, color: COLOR.mist, opacity: A(f, 44, 62), letterSpacing: "0.02em" }}>{subText}</div>}
           {stampText && <div style={{ position: "absolute", right: 0, top: -40 }}><Stamp text={stampText} delay={54} rotate={-7} /></div>}
         </div>
       )}
@@ -76,7 +76,7 @@ export const StatementCard = ({
           <div style={{ fontFamily: FONT.serif, fontStyle: "italic", fontWeight: 400, fontSize: 78, lineHeight: 1.22, color: COLOR.white, textAlign: "center", opacity: A(f, 10, 34), transform: `translateY(${A(f, 10, 34, 16, 0)}px) scale(${zoom})` }}>
             {renderEmphasis(mainText)}
           </div>
-          {subText && <div style={{ fontFamily: FONT.sans, fontSize: SIZE.body, letterSpacing: TRACK.label, color: COLOR.mist, textTransform: "uppercase", marginTop: 40, opacity: A(f, 40, 58) }}>{subText}</div>}
+          {subText && <div style={{ fontFamily: FONT.sans, fontWeight: 700, fontSize: SIZE.body, letterSpacing: TRACK.label, color: COLOR.mist, textTransform: "uppercase", marginTop: 40, opacity: A(f, 40, 58) }}>{subText}</div>}
           <div style={{ width: A(f, 30, 50, 0, 120), height: 3, backgroundColor: COLOR.red, marginTop: 40 }} />
         </div>
       )}

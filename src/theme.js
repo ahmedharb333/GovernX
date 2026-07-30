@@ -42,7 +42,10 @@ export const COLOR = {
   // "barely readable" at small sizes. Still a clear step below white so the
   // hierarchy holds, but now legible on mobile.
   mist      : "#C8D2E1",   // was #AEB9CC — captions, labels, source lines
-  mistDim   : "#9AA8BE",   // was #6E7A90 — faintest tier (GOVERNANCE ANGLE, notes)
+  // Faintest tier (sub-labels, axis labels, notes, footers). Brightened again
+  // (#6E7A90 → #9AA8BE → #AEBACE): even after the first bump these smallest labels
+  // read faint on a phone. Still a clear step below `mist`, so hierarchy holds.
+  mistDim   : "#AEBACE",
 
   // Trust
   verified  : "#1E7A46",   // verified claim badge

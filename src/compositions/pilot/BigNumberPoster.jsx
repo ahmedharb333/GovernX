@@ -100,7 +100,10 @@ export const BigNumberPoster = ({
           fontFamily: FONT.displayHeavy, fontWeight: 900, fontSize: SIZE.hero, lineHeight: 0.85,
           color: COLOR.white, letterSpacing: TRACK.tight
         }}>
-          {prefix}{num}<span style={{ color: COLOR.red }}>{suffix}</span>
+          {/* currency prefix ($) and magnitude/unit suffix (%, M, B) render at
+              half the digit height — a unit at full 300px looked oversized
+              ("0.2%" had a giant %, "$485M" a giant $). */}
+          <span style={{ fontSize: "0.5em" }}>{prefix}</span>{num}<span style={{ color: COLOR.red, fontSize: "0.5em" }}>{suffix}</span>
         </div>
       </div>
 

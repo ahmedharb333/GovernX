@@ -48,13 +48,18 @@ const Caption = ({ text, durationInFrames }) => {
     <div style={{
       position: "absolute", left: 0, right: 0, bottom: 0, height: CAPTION_BAND, opacity: op,
       display: "flex", alignItems: "center",
-      backgroundColor: "rgba(8,13,24,0.96)", borderTop: `1px solid ${COLOR.navyPanel}`
+      // fully opaque band (was 0.96) so nothing behind bleeds through the caption
+      backgroundColor: "rgba(8,13,24,1)", borderTop: `1px solid ${COLOR.navyPanel}`
     }}>
       <div style={{
         maxWidth: 1500, margin: "0 auto", padding: "0 60px",
         borderLeft: `4px solid ${COLOR.red}`, paddingLeft: 22,
-        fontFamily: FONT.sans, fontSize: 30, lineHeight: 1.3, color: COLOR.white,
-        letterSpacing: TRACK.tight, textAlign: "left"
+        // Unified subtitle type: brand sans (Montserrat), BOLD, with a soft
+        // drop-shadow so the line stays legible on any frame. One component =
+        // every scene's caption is identical.
+        fontFamily: FONT.sans, fontWeight: 700, fontSize: 30, lineHeight: 1.3, color: COLOR.white,
+        letterSpacing: TRACK.tight, textAlign: "left",
+        textShadow: "0 2px 6px rgba(0,0,0,0.6)"
       }}>
         {text}
       </div>

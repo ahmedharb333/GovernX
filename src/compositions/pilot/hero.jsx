@@ -162,13 +162,20 @@ export const VerdictCard = ({
         </div>
         <div style={{ width: A(f, 14, 40) * 520, height: 3, backgroundColor: COLOR.red, marginTop: 20 }} />
       </div>
-      <div style={{ position: "absolute", top: 380, left: SPACE.margin, right: SPACE.margin, opacity: A(f, 20, 44),
-        fontFamily: FONT.serif, fontSize: 58, lineHeight: 1.32, color: COLOR.white, maxWidth: 1500 }}>
-        {ruling}
-      </div>
-      <div style={{ position: "absolute", top: 720, left: SPACE.margin, right: SPACE.margin, opacity: A(f, 56, 78),
-        fontFamily: FONT.displayHeavy, fontSize: 60, color: COLOR.red, textTransform: "uppercase", letterSpacing: TRACK.tight, maxWidth: 1500 }}>
-        {punch}
+      {/* ruling + punch FLOW together in one centered column between the header
+          and the sign-off, so a long ruling pushes the punch DOWN instead of
+          overlapping it. The old fixed top:720 punch collided with the last line
+          of any 5–6 line ruling ("…to override either one" ran under the red). */}
+      <div style={{ position: "absolute", top: 320, bottom: 210, left: SPACE.margin, right: SPACE.margin,
+        display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ opacity: A(f, 20, 44), fontFamily: FONT.serif, fontSize: 52, lineHeight: 1.3,
+          color: COLOR.white, maxWidth: 1500 }}>
+          {ruling}
+        </div>
+        <div style={{ marginTop: 44, opacity: A(f, 56, 78), fontFamily: FONT.displayHeavy, fontSize: 60,
+          color: COLOR.red, textTransform: "uppercase", letterSpacing: TRACK.tight, maxWidth: 1500 }}>
+          {punch}
+        </div>
       </div>
       <div style={{ position: "absolute", bottom: 110, left: SPACE.margin, opacity: A(f, 80, 100) }}>
         <div style={{ fontFamily: FONT.serif, fontWeight: 700, fontSize: 44, color: COLOR.white }}>GOVERN<span style={{ color: COLOR.red }}>X</span></div>

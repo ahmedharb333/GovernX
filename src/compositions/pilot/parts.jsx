@@ -118,7 +118,14 @@ export const AttributionTag = ({ attribution = "Regulator", delay = 38 }) => {
   // attribution="Unclear" shows the warning; empty/unknown stays silent.
   const key = String(attribution || "").trim();
   if (!key) return null;
-  const s = ATTRIBUTION_STYLE[key] || ATTRIBUTION_STYLE.Unclear;
+  // Recognised value → its badge. A near-miss from the sheet ("Media report") is
+  // normalised. An UNRECOGNISED value ("Shareholder Activist") stays SILENT rather
+  // than falling back to a loud "ATTRIBUTION UNCLEAR" — that badge sitting next to
+  // "✓ VERIFIED CLAIM" reads as a defect, and the source line already names who said it.
+  const ALIAS = { "media report": "Media", "press report": "Media", "press": "Media" };
+  const norm  = ATTRIBUTION_STYLE[key] ? key : (ALIAS[key.toLowerCase()] || "");
+  const s     = ATTRIBUTION_STYLE[norm];
+  if (!s) return null;
   return (
     <div style={{
       display: "inline-flex", alignItems: "center", opacity: op,

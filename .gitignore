@@ -15,3 +15,6 @@ service-account.json
 *.serviceaccount.json
 oauth-client.json
 drive-token.json
+
+# local stash of disabled music beds (not source)
+music_backup/

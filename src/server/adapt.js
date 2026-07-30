@@ -163,11 +163,17 @@ function split(kv) {
 // the tag stays silent rather than showing "ATTRIBUTION UNCLEAR".
 function attributionFrom(kv) {
   const a = String(kv.attribution || "").trim();
-  if (a) return a;
+  // "Unclear" is the verifier's DEFAULT when it couldn't classify a claim — not a
+  // deliberate "this is disputed" signal. Passing it through renders a loud
+  // "ATTRIBUTION UNCLEAR" badge right next to "✓ VERIFIED CLAIM", which reads as a
+  // contradiction/defect. So treat "Unclear" as unknown: try to infer from the
+  // publisher below, and if that fails return undefined so the tag stays SILENT.
+  if (a && a.toLowerCase() !== "unclear") return a;
   const s = String(kv.source_publisher || kv.source || "").toLowerCase();
   if (/sec\b|cfpb|occ|regulat|prosecut/.test(s)) return "Regulator";
   if (/court|judg|settlement/.test(s)) return "Court";
   if (/compan|self|internal|nissan|issuer/.test(s)) return "Company self-reported";
+  if (/media|press|news|report|globe|register|macrumors|engadget|reuters|bloomberg/.test(s)) return "Media";
   return undefined;
 }
 function barChart(kv) {

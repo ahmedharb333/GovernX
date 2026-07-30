@@ -18,6 +18,7 @@
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { COLOR, FONT, SIZE, SPACE, TRACK, cardStyle } from "../../theme";
 import { Masthead, VerifiedBadge, PrimaryBadge, AttributionTag, Stamp, Vignette, useFade, useSlide } from "./parts";
+import { fitValueSize } from "./library";
 
 /* Defaults = data moment DM_4 (claim C8), Verified, attribution Regulator.
    `extract` must be the VERBATIM quote the engine gated against the document —
@@ -76,7 +77,7 @@ export const EvidenceCard = ({
 
         {/* big value + label */}
         <div style={{ marginTop: 36, display: "flex", alignItems: "flex-end", gap: 28, opacity: valOp }}>
-          <div style={{ fontFamily: FONT.displayHeavy, fontSize: 200, fontWeight: 900, color: COLOR.red, lineHeight: 0.8, letterSpacing: TRACK.tight }}>
+          <div style={{ fontFamily: FONT.displayHeavy, fontSize: fitValueSize(value, 200), fontWeight: 900, color: COLOR.red, lineHeight: 0.92, letterSpacing: TRACK.tight, maxWidth: 1200 }}>
             {value}
           </div>
           <div style={{ fontFamily: FONT.sans, fontSize: SIZE.label, fontWeight: 700, letterSpacing: TRACK.label, color: COLOR.inkSoft, textTransform: "uppercase", paddingBottom: 20 }}>

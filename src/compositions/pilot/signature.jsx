@@ -189,11 +189,14 @@ export const CaseCheckpoint = ({
       <div style={{ position: "absolute", left: SPACE.margin, top: 300, right: SPACE.margin }}>
         <div style={{ display: "flex", alignItems: "center", gap: 18, opacity: A(f, 8, 22) }}>
           <div style={{ width: 14, height: 14, borderRadius: 999, backgroundColor: COLOR.red }} />
-          <div style={{ fontFamily: FONT.mono, fontSize: SIZE.kicker, letterSpacing: "0.14em", color: COLOR.red, textTransform: "uppercase" }}>{date}</div>
+          {/* date + "GOVERNANCE ANGLE" were the two faintest labels in the system
+              (thin red-on-navy, and mistDim at the smallest 16px size). Bolder,
+              brighter, and one size up so they read on a phone. */}
+          <div style={{ fontFamily: FONT.mono, fontWeight: 700, fontSize: SIZE.kicker, letterSpacing: "0.14em", color: COLOR.red, textTransform: "uppercase" }}>{date}</div>
         </div>
         <div style={{ fontFamily: FONT.serif, fontWeight: 700, fontSize: 66, lineHeight: 1.12, color: COLOR.white, marginTop: 26, opacity: A(f, 14, 32), maxWidth: 1500 }}>{event}</div>
         <div style={{ marginTop: 44, borderLeft: `4px solid ${COLOR.red}`, paddingLeft: 24, opacity: A(f, 30, 48) }}>
-          <div style={{ fontFamily: FONT.mono, fontSize: SIZE.micro, letterSpacing: "0.16em", color: COLOR.mistDim, marginBottom: 8 }}>GOVERNANCE ANGLE</div>
+          <div style={{ fontFamily: FONT.mono, fontWeight: 700, fontSize: SIZE.label, letterSpacing: "0.16em", color: COLOR.mist, marginBottom: 8 }}>GOVERNANCE ANGLE</div>
           <div style={{ fontFamily: FONT.displayHeavy, fontSize: 44, color: COLOR.white, textTransform: "uppercase", letterSpacing: TRACK.tight, maxWidth: 1400 }}>{angle}</div>
         </div>
       </div>

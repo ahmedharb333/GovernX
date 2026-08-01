@@ -49,7 +49,7 @@ export const StatementCard = ({
       <Masthead code={code} delay={0} />
 
       {k === "hook" && (
-        <div style={{ position: "absolute", left: SPACE.margin, right: SPACE.margin, top: 340 }}>
+        <div style={{ position: "absolute", left: SPACE.margin, right: SPACE.margin, top: 0, bottom: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           {kicker && <div style={{ fontFamily: FONT.mono, fontSize: SIZE.kicker, letterSpacing: TRACK.label, color: COLOR.red, opacity: A(f, 6, 20), marginBottom: 24 }}>{kicker}</div>}
           <div style={{ fontFamily: FONT.serif, fontWeight: 700, fontSize: 116, lineHeight: 1.03, color: COLOR.white, letterSpacing: "-0.01em", opacity: A(f, 10, 30), transform: `translateY(${A(f, 10, 30, 20, 0)}px) scale(${zoom})`, transformOrigin: "left center" }}>
             {renderEmphasis(mainText)}
@@ -60,14 +60,16 @@ export const StatementCard = ({
       )}
 
       {k === "verdict" && (
-        <div style={{ position: "absolute", left: SPACE.margin, right: SPACE.margin, top: 300 }}>
-          {kicker && <div style={{ fontFamily: FONT.mono, fontSize: SIZE.kicker, letterSpacing: TRACK.label, color: COLOR.red, opacity: A(f, 6, 20), marginBottom: 22 }}>{kicker}</div>}
-          <div style={{ fontFamily: FONT.displayHeavy, fontSize: 104, lineHeight: 1.02, color: COLOR.white, textTransform: "uppercase", letterSpacing: TRACK.tight, opacity: A(f, 10, 28), transform: `translateY(${A(f, 10, 28, 18, 0)}px) scale(${zoom})`, transformOrigin: "left center", maxWidth: 1500 }}>
-            {renderEmphasis(mainText)}
+        <div style={{ position: "absolute", left: SPACE.margin, right: SPACE.margin, top: 0, bottom: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <div style={{ position: "relative" }}>
+            {kicker && <div style={{ fontFamily: FONT.mono, fontSize: SIZE.kicker, letterSpacing: TRACK.label, color: COLOR.red, opacity: A(f, 6, 20), marginBottom: 22 }}>{kicker}</div>}
+            <div style={{ fontFamily: FONT.displayHeavy, fontSize: 104, lineHeight: 1.02, color: COLOR.white, textTransform: "uppercase", letterSpacing: TRACK.tight, opacity: A(f, 10, 28), transform: `translateY(${A(f, 10, 28, 18, 0)}px) scale(${zoom})`, transformOrigin: "left center", maxWidth: 1500 }}>
+              {renderEmphasis(mainText)}
+            </div>
+            <div style={{ width: A(f, 30, 52, 0, 520), height: 4, backgroundColor: COLOR.red, marginTop: 30, marginBottom: 28 }} />
+            {subText && <div style={{ fontFamily: FONT.sans, fontWeight: 600, fontSize: SIZE.h2, color: COLOR.mist, opacity: A(f, 44, 62), letterSpacing: "0.02em" }}>{subText}</div>}
+            {stampText && <div style={{ position: "absolute", right: 0, top: -80 }}><Stamp text={stampText} delay={54} rotate={-7} /></div>}
           </div>
-          <div style={{ width: A(f, 30, 52, 0, 520), height: 4, backgroundColor: COLOR.red, marginTop: 30, marginBottom: 28 }} />
-          {subText && <div style={{ fontFamily: FONT.sans, fontWeight: 600, fontSize: SIZE.h2, color: COLOR.mist, opacity: A(f, 44, 62), letterSpacing: "0.02em" }}>{subText}</div>}
-          {stampText && <div style={{ position: "absolute", right: 0, top: -40 }}><Stamp text={stampText} delay={54} rotate={-7} /></div>}
         </div>
       )}
 

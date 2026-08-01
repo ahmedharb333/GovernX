@@ -398,8 +398,8 @@ export const CaseSplit = ({
   sourceLabel = "", footnote = ""
 }) => {
   const f = useCurrentFrame();
-  const Panel = ({ x, label, rows, accent, delay }) => (
-    <div style={{ position: "absolute", top: 300, left: x, width: 740,
+  const Panel = ({ label, rows, accent, delay }) => (
+    <div style={{ width: 740,
       opacity: A(f, delay, delay + 16), transform: `translateY(${A(f, delay, delay + 16, 24, 0)}px)` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
         <div style={{ width: 8, height: 30, backgroundColor: accent ? COLOR.red : COLOR.mistDim }} />
@@ -415,8 +415,14 @@ export const CaseSplit = ({
   );
   return (
     <Frame code="EVIDENCE · COMPARISON" title={title}>
-      <Panel x={SPACE.margin} label={leftLabel} rows={leftRows} accent={false} delay={14} />
-      <Panel x={1020} label={rightLabel} rows={rightRows} accent delay={30} />
+      {/* the two panels flow in a flex row that is vertically CENTERED between the
+          title and the note, so a 2-row comparison fills the frame instead of
+          clustering at the top with dead space below. */}
+      <div style={{ position: "absolute", top: 210, bottom: bottomNote ? 240 : 150, left: SPACE.margin, right: SPACE.margin,
+        display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Panel label={leftLabel} rows={leftRows} accent={false} delay={14} />
+        <Panel label={rightLabel} rows={rightRows} accent delay={30} />
+      </div>
       {bottomNote && <div style={{ position: "absolute", bottom: 190, left: SPACE.margin, right: SPACE.margin, opacity: A(f, 50, 68),
         fontFamily: FONT.serif, fontStyle: "italic", fontSize: 34, color: COLOR.white, borderLeft: `4px solid ${COLOR.red}`, paddingLeft: 22 }}>{bottomNote}</div>}
       <SourceFooter publisher={sourceLabel} docType={footnote} delay={58} bottom={SPACE.lg} />

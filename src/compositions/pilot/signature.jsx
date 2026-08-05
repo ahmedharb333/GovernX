@@ -212,7 +212,9 @@ export const BeatTimeline = ({
   sourceLabel = "", footnote = ""
 }) => {
   const f = useCurrentFrame();
-  const y = 560, x0 = SPACE.margin + 200, x1 = 1920 - SPACE.margin - 200;
+  // y is the timeline rail; 660 centres the label+rail block in the visible area
+  // (was 560, which left the whole bottom half empty).
+  const y = 660, x0 = SPACE.margin + 200, x1 = 1920 - SPACE.margin - 200;
   const sweep = A(f, 16, 56);
   const n = beats.length;
   return (
@@ -234,7 +236,7 @@ export const BeatTimeline = ({
           <div key={i} style={{ position: "absolute", left: px - 200, width: 400, top: y - 240, textAlign: "center",
             opacity: A(f, d, d + 16), transform: `translateY(${A(f, d, d + 16, 18, 0)}px)` }}>
             <div style={{ fontFamily: FONT.displayHeavy, fontSize: 96, color: COLOR.white, lineHeight: 0.9 }}>{b.year}</div>
-            <div style={{ fontFamily: FONT.sans, fontWeight: 600, fontSize: 25, color: COLOR.mist, marginTop: 16, lineHeight: 1.3 }}>{b.event}</div>
+            <div style={{ fontFamily: FONT.sans, fontWeight: 700, fontSize: 30, color: COLOR.mist, marginTop: 16, lineHeight: 1.3 }}>{b.event}</div>
           </div>
         );
       })}

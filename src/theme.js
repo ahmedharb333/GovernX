@@ -41,11 +41,13 @@ export const COLOR = {
   // (#AEB9CC / #6E7A90) rendered years, kickers, captions and source lines
   // "barely readable" at small sizes. Still a clear step below white so the
   // hierarchy holds, but now legible on mobile.
-  mist      : "#C8D2E1",   // was #AEB9CC — captions, labels, source lines
+  mist      : "#D5DDE9",   // brightened again (#AEB9CC → #C8D2E1 → #D5DDE9): small
+                           // secondary labels (split values, beat descriptions) still
+                           // read faint on a phone. Clear step below white; hierarchy holds.
   // Faintest tier (sub-labels, axis labels, notes, footers). Brightened again
-  // (#6E7A90 → #9AA8BE → #AEBACE): even after the first bump these smallest labels
-  // read faint on a phone. Still a clear step below `mist`, so hierarchy holds.
-  mistDim   : "#AEBACE",
+  // (#6E7A90 → #9AA8BE → #AEBACE → #C0CAD9): even after earlier bumps these smallest
+  // labels read faint on a phone. Still a step below `mist`, so hierarchy holds.
+  mistDim   : "#C0CAD9",
 
   // Trust
   verified  : "#1E7A46",   // verified claim badge

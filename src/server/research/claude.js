@@ -114,7 +114,7 @@ async function groqFallback({ system, prompt, maxTokens = 8000 }) {
   if (orKey) {
     url = "https://openrouter.ai/api/v1/chat/completions";
     key = orKey;
-    model = process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
+    model = process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat-v3-0324:free";
   } else if (gqKey) {
     url = "https://api.groq.com/openai/v1/chat/completions";
     key = gqKey;

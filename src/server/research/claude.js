@@ -79,13 +79,6 @@ async function callClaude({ system, prompt, maxTokens = 8000, model, schema }) {
         continue;
       }
       const body = await resp.text();
-      // Claude credit exhausted → free Groq fallback so research keeps flowing.
-      // Returns { …, fallback:true }; callers route the text through the tolerant
-      // JSON parser since Groq can't honour the Anthropic schema.
-      if (resp.status === 400 && /credit balance is too low/i.test(body)) {
-        const fb = await groqFallback({ system, prompt, maxTokens });
-        if (fb) return fb;
-      }
       throw new Error("Anthropic error " + resp.status + ": " + body.slice(0, 400));
     } catch (err) {
       lastErr = err.message;
@@ -96,54 +89,6 @@ async function callClaude({ system, prompt, maxTokens = 8000, model, schema }) {
 }
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
-/* ── Groq free-tier fallback (Llama 3.3 70B) ────────────────────────────────────
-   Fires ONLY when Claude returns "credit balance is too low". Keeps the research
-   engine producing while the Anthropic account is at $0. Groq has no structured-
-   output/schema mode, so it returns plain text and callJsonArray parses it
-   tolerantly. Quality is below Claude — re-run verification on Claude once funded.
-   Returns null if GROQ_API_KEY is unset, so the caller raises its normal error. */
-async function groqFallback({ system, prompt, maxTokens = 8000 }) {
-  const orKey = process.env.OPENROUTER_API_KEY;
-  const gqKey = process.env.GROQ_API_KEY;
-
-  // Prefer OpenRouter: it handles large research prompts that Groq's free
-  // 12k-tokens/min tier rejects. Groq stays as a secondary. Model overridable
-  // via OPENROUTER_MODEL / GROQ_MODEL.
-  let url, key, model;
-  if (orKey) {
-    url = "https://openrouter.ai/api/v1/chat/completions";
-    key = orKey;
-    model = process.env.OPENROUTER_MODEL || "google/gemma-4-31b-it:free";
-  } else if (gqKey) {
-    url = "https://api.groq.com/openai/v1/chat/completions";
-    key = gqKey;
-    model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
-  } else {
-    return null;
-  }
-
-  const resp = await fetch(url, {
-    method : "POST",
-    headers: { "Authorization": "Bearer " + key, "content-type": "application/json" },
-    body   : JSON.stringify({
-      model,
-      max_tokens: Math.min(maxTokens, 16000),
-      messages  : [
-        ...(system ? [{ role: "system", content: system }] : []),
-        { role: "user", content: prompt }
-      ]
-    })
-  });
-  if (resp.status !== 200) {
-    throw new Error("LLM fallback (" + model + ") failed " + resp.status + ": " + (await resp.text()).slice(0, 400));
-  }
-  const json = await resp.json();
-  console.warn("⚠ [Research] Claude credit exhausted → " + model + " fallback used. " +
-    "Quality below Claude — re-run verification on Claude when the account is funded.");
-  return { text: (json.choices && json.choices[0] && json.choices[0].message.content) || "",
-    stopReason: "end_turn", usage: json.usage || {}, fallback: true };
-}
 
 // ── Tolerant JSON-array parsing (fallback path when no schema is supplied) ────
 function parseJsonArray(raw) {
@@ -176,14 +121,14 @@ async function callJsonArray({ system, prompt, maxTokens = 8000, model, label = 
       : prompt + `\n\nIMPORTANT: your previous reply could not be parsed. ` +
                  `Reply with ONLY a JSON array — no prose, no code fences.`;
 
-    const { text, stopReason, fallback } = await callClaude({ system, prompt: p, maxTokens, model, schema });
+    const { text, stopReason } = await callClaude({ system, prompt: p, maxTokens, model, schema });
     lastRaw = text; lastStop = stopReason;
 
     let arr = [];
-    if (schema && !fallback) {         // Groq can't honour the anthropic schema
+    if (schema) {
       try { arr = JSON.parse(text).items || []; } catch { arr = []; }
     } else {
-      arr = parseJsonArray(text);      // tolerant parse for Groq / no-schema paths
+      arr = parseJsonArray(text);
     }
 
     const ok = arr.length > 0 && (expect == null || arr.length === expect);

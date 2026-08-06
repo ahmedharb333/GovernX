@@ -104,14 +104,31 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
    tolerantly. Quality is below Claude — re-run verification on Claude once funded.
    Returns null if GROQ_API_KEY is unset, so the caller raises its normal error. */
 async function groqFallback({ system, prompt, maxTokens = 8000 }) {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) return null;
-  const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const orKey = process.env.OPENROUTER_API_KEY;
+  const gqKey = process.env.GROQ_API_KEY;
+
+  // Prefer OpenRouter: it handles large research prompts that Groq's free
+  // 12k-tokens/min tier rejects. Groq stays as a secondary. Model overridable
+  // via OPENROUTER_MODEL / GROQ_MODEL.
+  let url, key, model;
+  if (orKey) {
+    url = "https://openrouter.ai/api/v1/chat/completions";
+    key = orKey;
+    model = process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
+  } else if (gqKey) {
+    url = "https://api.groq.com/openai/v1/chat/completions";
+    key = gqKey;
+    model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+  } else {
+    return null;
+  }
+
+  const resp = await fetch(url, {
     method : "POST",
     headers: { "Authorization": "Bearer " + key, "content-type": "application/json" },
     body   : JSON.stringify({
-      model     : "llama-3.3-70b-versatile",
-      max_tokens: Math.min(maxTokens, 8000),
+      model,
+      max_tokens: Math.min(maxTokens, 16000),
       messages  : [
         ...(system ? [{ role: "system", content: system }] : []),
         { role: "user", content: prompt }
@@ -119,10 +136,10 @@ async function groqFallback({ system, prompt, maxTokens = 8000 }) {
     })
   });
   if (resp.status !== 200) {
-    throw new Error("Groq fallback also failed " + resp.status + ": " + (await resp.text()).slice(0, 300));
+    throw new Error("LLM fallback (" + model + ") failed " + resp.status + ": " + (await resp.text()).slice(0, 400));
   }
   const json = await resp.json();
-  console.warn("⚠ [Research] Claude credit exhausted → GROQ (Llama 3.3 70B) fallback used. " +
+  console.warn("⚠ [Research] Claude credit exhausted → " + model + " fallback used. " +
     "Quality below Claude — re-run verification on Claude when the account is funded.");
   return { text: (json.choices && json.choices[0] && json.choices[0].message.content) || "",
     stopReason: "end_turn", usage: json.usage || {}, fallback: true };

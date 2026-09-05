@@ -70,7 +70,7 @@ async function callClaude({ system, prompt, maxTokens = 8000, model, schema }) {
           throw new Error("model refused the request: " +
             JSON.stringify(json.stop_details || {}));
         }
-        return { text, stopReason: json.stop_reason, usage: json.usage || {} };
+        return { text, stopReason: json.stop_reason, usage: json.usage || {}, fallback: false };
       }
 
       if (resp.status === 429 || resp.status === 529) {
@@ -79,6 +79,13 @@ async function callClaude({ system, prompt, maxTokens = 8000, model, schema }) {
         continue;
       }
       const body = await resp.text();
+      // Claude credit exhausted → free Gemini fallback so research keeps flowing.
+      // Returns { …, fallback:true }; callJsonArray routes the text through the
+      // tolerant parser since Gemini can't honour the Anthropic json_schema.
+      if (resp.status === 400 && /credit balance is too low/i.test(body)) {
+        const fb = await geminiFallback({ system, prompt, maxTokens });
+        if (fb) return fb;
+      }
       throw new Error("Anthropic error " + resp.status + ": " + body.slice(0, 400));
     } catch (err) {
       lastErr = err.message;
@@ -89,6 +96,44 @@ async function callClaude({ system, prompt, maxTokens = 8000, model, schema }) {
 }
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+/* ── Gemini free-tier fallback ──────────────────────────────────────────────────
+   Fires ONLY when Claude returns "credit balance is too low". Keeps the research
+   engine producing while the Anthropic console is at $0, on Google Gemini's real
+   free tier (a per-account quota, not a shared pool; 1M context — big enough for a
+   full filing). Gemini has no Anthropic json_schema mode, so it returns plain text
+   and callJsonArray parses it tolerantly. Quality is below Claude — ESPECIALLY the
+   adversarial verify pass — so re-run verification on Claude once funded. Returns
+   null if GEMINI_API_KEY is unset, so the caller raises its normal error.
+   Uses Gemini's OpenAI-compatible endpoint. Model overridable via GEMINI_MODEL
+   (default gemini-2.0-flash — solidly free; gemini-2.5-flash for higher quality). */
+async function geminiFallback({ system, prompt, maxTokens = 8000 }) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+  const url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+
+  const resp = await fetch(url, {
+    method : "POST",
+    headers: { "Authorization": "Bearer " + key, "content-type": "application/json" },
+    body   : JSON.stringify({
+      model,
+      max_tokens: Math.min(maxTokens, 8192),   // Gemini 2.0 Flash output cap
+      messages  : [
+        ...(system ? [{ role: "system", content: system }] : []),
+        { role: "user", content: prompt }
+      ]
+    })
+  });
+  if (resp.status !== 200) {
+    throw new Error("Gemini fallback (" + model + ") failed " + resp.status + ": " + (await resp.text()).slice(0, 300));
+  }
+  const json = await resp.json();
+  console.warn("⚠ [Research] Claude credit exhausted → " + model + " fallback used. " +
+    "Quality below Claude — re-run verification on Claude when the console is funded.");
+  return { text: (json.choices && json.choices[0] && json.choices[0].message.content) || "",
+    stopReason: "end_turn", usage: json.usage || {}, fallback: true };
+}
 
 // ── Tolerant JSON-array parsing (fallback path when no schema is supplied) ────
 function parseJsonArray(raw) {
@@ -121,14 +166,14 @@ async function callJsonArray({ system, prompt, maxTokens = 8000, model, label = 
       : prompt + `\n\nIMPORTANT: your previous reply could not be parsed. ` +
                  `Reply with ONLY a JSON array — no prose, no code fences.`;
 
-    const { text, stopReason } = await callClaude({ system, prompt: p, maxTokens, model, schema });
+    const { text, stopReason, fallback } = await callClaude({ system, prompt: p, maxTokens, model, schema });
     lastRaw = text; lastStop = stopReason;
 
     let arr = [];
-    if (schema) {
+    if (schema && !fallback) {   // Gemini can't honour the Anthropic json_schema
       try { arr = JSON.parse(text).items || []; } catch { arr = []; }
     } else {
-      arr = parseJsonArray(text);
+      arr = parseJsonArray(text);   // tolerant parse for the Gemini / no-schema paths
     }
 
     const ok = arr.length > 0 && (expect == null || arr.length === expect);
